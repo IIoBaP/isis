@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_KnowledgeControl" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="18.28.0">
+  <bpmn:collaboration id="Collaboration_1">
+    <bpmn:participant id="Participant_Company" name="Организация" processRef="Process_KnowledgeControl" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_KnowledgeControl" name="Контроль знаний сотрудников" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_1">
+      <bpmn:lane id="Lane_Admin" name="Администратор">
+        <bpmn:flowNodeRef>StartEvent_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_CreateTest</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_PublishTest</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_TestValid</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Manager" name="Руководитель">
+        <bpmn:flowNodeRef>EndEvent_Error</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AssignTest</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_NotStarted</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Escalate</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AnalyzeResults</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_ResultOk</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_Success</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ScheduleTraining</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Employee" name="Сотрудник">
+        <bpmn:flowNodeRef>Task_TakeTest</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ViewResult</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_System" name="Система">
+        <bpmn:flowNodeRef>Task_Notify</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AutoCheck</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_SaveResult</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_BuildReport</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_WaitEmployee</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_Timer3Days</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:userTask id="Task_ScheduleTraining" name="Назначить дополнительное&#10;обучение и повторный тест">
+      <bpmn:incoming>Flow_NeedTraining</bpmn:incoming>
+      <bpmn:outgoing>Flow_Retake</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:endEvent id="EndEvent_Success" name="Компетенции подтверждены">
+      <bpmn:incoming>Flow_End_Ok</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:exclusiveGateway id="Gateway_ResultOk" name="Результат удовлетворителен?">
+      <bpmn:incoming>Flow_10</bpmn:incoming>
+      <bpmn:outgoing>Flow_NeedTraining</bpmn:outgoing>
+      <bpmn:outgoing>Flow_End_Ok</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_NeedTraining" name="Нет" sourceRef="Gateway_ResultOk" targetRef="Task_ScheduleTraining" />
+    <bpmn:sequenceFlow id="Flow_End_Ok" name="Да" sourceRef="Gateway_ResultOk" targetRef="EndEvent_Success" />
+    <bpmn:sequenceFlow id="Flow_Retake" sourceRef="Task_ScheduleTraining" targetRef="Task_Notify" />
+    <bpmn:userTask id="Task_AnalyzeResults" name="Проанализировать результаты">
+      <bpmn:incoming>Flow_9</bpmn:incoming>
+      <bpmn:outgoing>Flow_10</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_10" sourceRef="Task_AnalyzeResults" targetRef="Gateway_ResultOk" />
+    <bpmn:userTask id="Task_Escalate" name="Эскалация: связаться&#10;с сотрудником">
+      <bpmn:incoming>Flow_Timer</bpmn:incoming>
+      <bpmn:outgoing>Flow_EscalateEnd</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:endEvent id="EndEvent_NotStarted" name="Сотрудник не приступил&#10;к тестированию">
+      <bpmn:incoming>Flow_EscalateEnd</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_EscalateEnd" sourceRef="Task_Escalate" targetRef="EndEvent_NotStarted" />
+    <bpmn:intermediateCatchEvent id="Event_WaitEmployee" name="Ожидание отклика&#10;сотрудника">
+      <bpmn:incoming>Flow_5</bpmn:incoming>
+      <bpmn:outgoing>Flow_5b</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDef_1" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:sequenceFlow id="Flow_5b" sourceRef="Event_WaitEmployee" targetRef="Task_TakeTest" />
+    <bpmn:boundaryEvent id="Event_Timer3Days" name="3 дня истекли" attachedToRef="Event_WaitEmployee">
+      <bpmn:outgoing>Flow_Timer</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerEventDef_1">
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">P3D</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+    <bpmn:sequenceFlow id="Flow_Timer" name="Просрочено" sourceRef="Event_Timer3Days" targetRef="Task_Escalate" />
+    <bpmn:userTask id="Task_ViewResult" name="Ознакомиться с результатом">
+      <bpmn:incoming>Flow_8</bpmn:incoming>
+      <bpmn:outgoing>Flow_Analyze</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_Analyze" sourceRef="Task_ViewResult" targetRef="Task_BuildReport" />
+    <bpmn:userTask id="Task_TakeTest" name="Пройти тест">
+      <bpmn:incoming>Flow_5b</bpmn:incoming>
+      <bpmn:outgoing>Flow_6</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_6" sourceRef="Task_TakeTest" targetRef="Task_AutoCheck" />
+    <bpmn:serviceTask id="Task_BuildReport" name="Сформировать отчёт&#10;(графики, экспорт)">
+      <bpmn:incoming>Flow_Analyze</bpmn:incoming>
+      <bpmn:outgoing>Flow_9</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_9" sourceRef="Task_BuildReport" targetRef="Task_AnalyzeResults" />
+    <bpmn:serviceTask id="Task_SaveResult" name="Сохранить результат&#10;в базе данных">
+      <bpmn:incoming>Flow_7</bpmn:incoming>
+      <bpmn:outgoing>Flow_8</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_8" sourceRef="Task_SaveResult" targetRef="Task_ViewResult" />
+    <bpmn:serviceTask id="Task_AutoCheck" name="Автоматически проверить ответы">
+      <bpmn:incoming>Flow_6</bpmn:incoming>
+      <bpmn:outgoing>Flow_7</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_7" sourceRef="Task_AutoCheck" targetRef="Task_SaveResult" />
+    <bpmn:sendTask id="Task_Notify" name="Отправить уведомление&#10;сотрудникам">
+      <bpmn:incoming>Flow_Retake</bpmn:incoming>
+      <bpmn:incoming>Flow_4</bpmn:incoming>
+      <bpmn:outgoing>Flow_5</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:sequenceFlow id="Flow_5" sourceRef="Task_Notify" targetRef="Event_WaitEmployee" />
+    <bpmn:userTask id="Task_AssignTest" name="Назначить тестирование&#10;(сотрудники, срок)">
+      <bpmn:incoming>Flow_PublishOk</bpmn:incoming>
+      <bpmn:outgoing>Flow_4</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="Task_AssignTest" targetRef="Task_Notify" />
+    <bpmn:exclusiveGateway id="Gateway_TestValid" name="Тест корректен?">
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+      <bpmn:outgoing>Flow_PublishOk</bpmn:outgoing>
+      <bpmn:outgoing>Flow_PublishFail</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_PublishOk" name="Да" sourceRef="Gateway_TestValid" targetRef="Task_AssignTest" />
+    <bpmn:serviceTask id="Task_PublishTest" name="Проверить и опубликовать тест">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Task_PublishTest" targetRef="Gateway_TestValid" />
+    <bpmn:userTask id="Task_CreateTest" name="Создать тест:&#10;вопросы, типы, критерии">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_CreateTest" targetRef="Task_PublishTest" />
+    <bpmn:endEvent id="EndEvent_Error" name="Тест не опубликован">
+      <bpmn:incoming>Flow_PublishFail</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_PublishFail" name="Нет" sourceRef="Gateway_TestValid" targetRef="EndEvent_Error" />
+    <bpmn:startEvent id="StartEvent_1" name="Старт: потребность в оценке знаний">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="StartEvent_1" targetRef="Task_CreateTest" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1">
+      <bpmndi:BPMNShape id="Participant_Company_di" bpmnElement="Participant_Company" isHorizontal="true">
+        <dc:Bounds x="120" y="80" width="3108" height="700" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_System_di" bpmnElement="Lane_System" isHorizontal="true">
+        <dc:Bounds x="150" y="605" width="3078" height="175" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Employee_di" bpmnElement="Lane_Employee" isHorizontal="true">
+        <dc:Bounds x="150" y="430" width="3078" height="175" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Manager_di" bpmnElement="Lane_Manager" isHorizontal="true">
+        <dc:Bounds x="150" y="255" width="3078" height="175" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Admin_di" bpmnElement="Lane_Admin" isHorizontal="true">
+        <dc:Bounds x="150" y="80" width="3078" height="175" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
+        <dc:Bounds x="200" y="149" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="183" y="192" width="75" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Error_di" bpmnElement="EndEvent_Error">
+        <dc:Bounds x="850" y="219" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="836" y="262" width="84" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_CreateTest_di" bpmnElement="Task_CreateTest">
+        <dc:Bounds x="300" y="127" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_PublishTest_di" bpmnElement="Task_PublishTest">
+        <dc:Bounds x="500" y="127" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_TestValid_di" bpmnElement="Gateway_TestValid" isMarkerVisible="true">
+        <dc:Bounds x="700" y="142" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="683" y="112" width="84" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AssignTest_di" bpmnElement="Task_AssignTest">
+        <dc:Bounds x="900" y="302" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Notify_di" bpmnElement="Task_Notify">
+        <dc:Bounds x="1150" y="652" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AutoCheck_di" bpmnElement="Task_AutoCheck">
+        <dc:Bounds x="1850" y="652" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SaveResult_di" bpmnElement="Task_SaveResult">
+        <dc:Bounds x="2050" y="652" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_BuildReport_di" bpmnElement="Task_BuildReport">
+        <dc:Bounds x="2450" y="652" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_TakeTest_di" bpmnElement="Task_TakeTest">
+        <dc:Bounds x="1650" y="477" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ViewResult_di" bpmnElement="Task_ViewResult">
+        <dc:Bounds x="2250" y="477" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_WaitEmployee_di" bpmnElement="Event_WaitEmployee">
+        <dc:Bounds x="1400" y="674" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1372" y="717" width="96" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_NotStarted_di" bpmnElement="EndEvent_NotStarted">
+        <dc:Bounds x="1682" y="324" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1662" y="367" width="81" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Escalate_di" bpmnElement="Task_Escalate">
+        <dc:Bounds x="1485" y="302" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AnalyzeResults_di" bpmnElement="Task_AnalyzeResults">
+        <dc:Bounds x="2650" y="270" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_ResultOk_di" bpmnElement="Gateway_ResultOk" isMarkerVisible="true">
+        <dc:Bounds x="2850" y="285" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2834" y="255" width="126" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Success_di" bpmnElement="EndEvent_Success">
+        <dc:Bounds x="3092" y="292" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3072" y="335" width="76" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ScheduleTraining_di" bpmnElement="Task_ScheduleTraining">
+        <dc:Bounds x="2915" y="340" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_Timer3Days_di" bpmnElement="Event_Timer3Days">
+        <dc:Bounds x="1418" y="656" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1335" y="640" width="71" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="236" y="167" />
+        <di:waypoint x="300" y="167" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+        <di:waypoint x="450" y="167" />
+        <di:waypoint x="500" y="167" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3">
+        <di:waypoint x="650" y="167" />
+        <di:waypoint x="700" y="167" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_PublishOk_di" bpmnElement="Flow_PublishOk">
+        <di:waypoint x="750" y="167" />
+        <di:waypoint x="975" y="167" />
+        <di:waypoint x="975" y="302" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="759" y="145" width="14" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_PublishFail_di" bpmnElement="Flow_PublishFail">
+        <di:waypoint x="725" y="192" />
+        <di:waypoint x="725" y="237" />
+        <di:waypoint x="850" y="237" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="731" y="210" width="19" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_4_di" bpmnElement="Flow_4">
+        <di:waypoint x="1050" y="342" />
+        <di:waypoint x="1225" y="342" />
+        <di:waypoint x="1225" y="652" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_5_di" bpmnElement="Flow_5">
+        <di:waypoint x="1300" y="692" />
+        <di:waypoint x="1400" y="692" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_5b_di" bpmnElement="Flow_5b">
+        <di:waypoint x="1430" y="679" />
+        <di:waypoint x="1590" y="517" />
+        <di:waypoint x="1650" y="517" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Timer_di" bpmnElement="Flow_Timer">
+        <di:waypoint x="1436" y="656" />
+        <di:waypoint x="1436" y="342" />
+        <di:waypoint x="1480" y="342" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1446" y="491" width="62" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_EscalateEnd_di" bpmnElement="Flow_EscalateEnd">
+        <di:waypoint x="1635" y="342" />
+        <di:waypoint x="1682" y="342" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_6_di" bpmnElement="Flow_6">
+        <di:waypoint x="1800" y="517" />
+        <di:waypoint x="1875" y="517" />
+        <di:waypoint x="1875" y="652" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_7_di" bpmnElement="Flow_7">
+        <di:waypoint x="2000" y="692" />
+        <di:waypoint x="2050" y="692" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_8_di" bpmnElement="Flow_8">
+        <di:waypoint x="2200" y="692" />
+        <di:waypoint x="2325" y="692" />
+        <di:waypoint x="2325" y="557" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Analyze_di" bpmnElement="Flow_Analyze">
+        <di:waypoint x="2400" y="557" />
+        <di:waypoint x="2525" y="557" />
+        <di:waypoint x="2525" y="652" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_9_di" bpmnElement="Flow_9">
+        <di:waypoint x="2600" y="692" />
+        <di:waypoint x="2725" y="692" />
+        <di:waypoint x="2725" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_10_di" bpmnElement="Flow_10">
+        <di:waypoint x="2800" y="310" />
+        <di:waypoint x="2850" y="310" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_End_Ok_di" bpmnElement="Flow_End_Ok">
+        <di:waypoint x="2900" y="310" />
+        <di:waypoint x="3092" y="310" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3039" y="288" width="14" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_NeedTraining_di" bpmnElement="Flow_NeedTraining">
+        <di:waypoint x="2875" y="335" />
+        <di:waypoint x="2875" y="380" />
+        <di:waypoint x="2915" y="380" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2888" y="357" width="19" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Retake_di" bpmnElement="Flow_Retake">
+        <di:waypoint x="2990" y="420" />
+        <di:waypoint x="2990" y="770" />
+        <di:waypoint x="1225" y="770" />
+        <di:waypoint x="1225" y="732" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
